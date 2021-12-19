@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.test import TestCase, Client
 from django.urls import reverse
 
@@ -55,6 +56,7 @@ class URLTests(TestCase):
 
         self.another.force_login(self.test_user)
         self.author.force_login(self.user_author)
+        cache.clear()
 
     def test_templates(self):
         posts_templates = {

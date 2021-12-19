@@ -2,6 +2,7 @@ import shutil
 import tempfile
 
 from django.test import TestCase, Client
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
 from django.urls import reverse
@@ -72,6 +73,7 @@ class PostsViewTest(TestCase):
 
         self.logined_client.force_login(self.test_user)
         self.logined_client_author.force_login(self.user_author)
+        cache.clear()
 
     @classmethod
     def tearDownClass(cls):
@@ -137,6 +139,7 @@ class PaginatorTest(TestCase):
             [Post(text=f'пост номер {i}', author=cls.user, group=cls.group)
              for i in range(POSTS_COUNT)]
         )
+        cache.clear()
 
     def test_paginator(self):
         urls = [

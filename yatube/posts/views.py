@@ -23,7 +23,7 @@ def index(request):
     })
 
 
-@cache_page(CACHE_TIME)
+# @cache_page(CACHE_TIME)
 @login_required
 def follow_index(request):
     return render(request, 'posts/follow.html', {

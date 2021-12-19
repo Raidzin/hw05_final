@@ -3,10 +3,6 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django import forms
 
-from django.core.files.base import File
-from io import BytesIO
-from io import BufferedReader
-
 from ..models import Post, User, Group
 
 USERNAME = 'username'

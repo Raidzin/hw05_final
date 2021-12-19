@@ -24,4 +24,3 @@ class TestCache(TestCase):
         self.assertEqual(content, Client().get(INDEX_URL).content)
         cache.clear()
         self.assertNotEqual(content, Client().get(INDEX_URL).content)
-

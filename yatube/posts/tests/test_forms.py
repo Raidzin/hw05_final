@@ -73,7 +73,7 @@ class FormsTest(TestCase):
         self.assertEqual(post.author, self.user)
         self.assertRedirects(response, PROFILE_URL)
         self.assertTrue(re.match(str(post_data['image']).split('.')[0],
-                                 str(post.image.file).split('\\')[-1]))
+                                 str(post.image.file).split('/')[-1]))
 
     def test_comment_create(self):
         comment_data = {'text': 'текст коммента'}
@@ -107,7 +107,7 @@ class FormsTest(TestCase):
         self.assertEqual(post.author, self.post.author)
         self.assertRedirects(response, self.POST_DETAIL_URL)
         self.assertTrue(re.match(str(post_data['image']).split('.')[0],
-                                 str(post.image.file).split('\\')[-1]))
+                                 str(post.image.file).split('/')[-1]))
 
     def test_forms_context(self):
         urls = [POST_CREATE_URL, self.POST_EDIT_URL]

@@ -48,27 +48,26 @@ class FormsTest(TestCase):
         })
         cls.POST_DETAIL_URL = reverse('posts:post_detail', kwargs={
             'post_id': cls.post.id})
-
-        cls.uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=SMALL_GIF,
-            content_type='image/gif'
-        )
         cls.anonim = Client()
         cls.logined_user = Client()
         cls.logined_user.force_login(cls.user)
 
     def test_post_create(self):
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
         post_data = {
             'text': 'текст поста нового',
             'group': self.group.id,
-            'image': self.uploaded,
+            'image': uploaded,
         }
-        posts = set(Post.objects.all())
+        post_posts = set(Post.objects.all())
         response = self.logined_user.post(POST_CREATE_URL, data=post_data)
-        posts = set(Post.objects.all()) - posts
-        self.assertEqual(len(posts), 1)
-        post = posts.pop()
+        post_posts = set(Post.objects.all()) - post_posts
+        self.assertEqual(len(post_posts), 1)
+        post = post_posts.pop()
         self.assertEqual(post.text, post_data['text'])
         self.assertEqual(post.group.id, post_data['group'])
         self.assertEqual(post.author, self.user)
@@ -90,10 +89,15 @@ class FormsTest(TestCase):
         self.assertRedirects(response, self.POST_DETAIL_URL)
 
     def test_post_edit(self):
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
         post_data = {
             'text': 'текст редактированного нового',
             'group': self.group_2.id,
-            'image': self.uploaded,
+            'image': uploaded,
         }
         response = self.logined_user.post(self.POST_EDIT_URL, data=post_data,
                                           follow=True)
@@ -121,22 +125,32 @@ class FormsTest(TestCase):
                         self.assertIsInstance(form_field, expected)
 
     def test_anonim_create_post(self):
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
         post_data = {
             'text': 'текст нового',
             'group': self.group_2.id,
-            'image': self.uploaded,
+            'image': uploaded,
         }
         posts = set(Post.objects.all())
-        response = self.anonim.post(POST_CREATE_URL, data=post_data,
+        self.anonim.post(POST_CREATE_URL, data=post_data,
                                     follow=True)
         posts = set(Post.objects.all()) - posts
         self.assertEqual(len(posts), 0)
 
     def test_anonim_edit_post(self):
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=SMALL_GIF,
+            content_type='image/gif'
+        )
         post_data = {
             'text': 'текст нового',
             'group': self.group_2.id,
-            'image': self.uploaded,
+            'image': uploaded,
         }
         self.anonim.post(self.POST_EDIT_URL, data=post_data, follow=True)
         post = Post.objects.get(id=self.post.id)

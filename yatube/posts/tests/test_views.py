@@ -15,10 +15,15 @@ SLUG = 'slug'
 SLUG_2 = 'slug2'
 
 INDEX_URL = reverse('posts:main')
+FOLLOW_URL = reverse('posts:follow_index')
 POST_CREATE_URL = reverse('posts:post_create')
 PROFILE_URL = reverse('posts:profile', kwargs={'username': USERNAME})
 GROUP_POSTS_URL = reverse('posts:group_posts', kwargs={'slug': SLUG})
 GROUP_POSTS_2_URL = reverse('posts:group_posts', kwargs={'slug': SLUG_2})
+FOLLOW_USER_URL = reverse('posts:profile_follow',
+                          kwargs={'username': USERNAME})
+UNFOLLOW_USER_URL = reverse('posts:profile_unfollow',
+                            kwargs={'username': USERNAME})
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 SMALL_GIF = (
@@ -60,19 +65,22 @@ class PostsViewTest(TestCase):
             group=cls.group,
             image=uploaded,
         )
+        cls.follow = Follow.objects.create(
+            author=cls.user_author,
+            user=cls.test_user,
+        )
 
         cls.POST_DETAIL_URL = reverse('posts:post_detail', kwargs={
             'post_id': cls.post.id})
         cls.POST_EDIT_URL = reverse('posts:post_edit', kwargs={
             'post_id': cls.post.id})
 
-    def setUp(self):
-        self.guest_client = Client()
-        self.logined_client = Client()
-        self.logined_client_author = Client()
+        cls.guest_client = Client()
+        cls.logined_client = Client()
+        cls.logined_client_author = Client()
 
-        self.logined_client.force_login(self.test_user)
-        self.logined_client_author.force_login(self.user_author)
+        cls.logined_client.force_login(cls.test_user)
+        cls.logined_client_author.force_login(cls.user_author)
         cache.clear()
 
     @classmethod
@@ -84,12 +92,13 @@ class PostsViewTest(TestCase):
         urls = [INDEX_URL,
                 GROUP_POSTS_URL,
                 PROFILE_URL,
-                self.POST_DETAIL_URL
+                self.POST_DETAIL_URL,
+                FOLLOW_URL,
                 ]
 
         for url in urls:
             with self.subTest(url=url):
-                response = self.guest_client.get(url)
+                response = self.logined_client.get(url)
                 if 'page_obj' in response.context:
                     self.assertEqual(len(response.context['page_obj']), 1)
                     post = response.context['page_obj'][0]
@@ -117,8 +126,12 @@ class PostsViewTest(TestCase):
                          self.group.description)
 
     def test_new_post_append_in_another_group(self):
-        posts = self.guest_client.get(GROUP_POSTS_2_URL).context['page_obj']
-        self.assertNotIn(self.post, posts)
+        self.logined_client.get(UNFOLLOW_USER_URL)
+        urls = [GROUP_POSTS_2_URL, FOLLOW_URL]
+        for url in urls:
+            with self.subTest(url=url):
+                page_posts = self.logined_client.get(url).context['page_obj']
+                self.assertNotIn(self.post, page_posts)
 
 
 class PaginatorTest(TestCase):
@@ -156,38 +169,35 @@ class PaginatorTest(TestCase):
 
 class FollowsTest(TestCase):
 
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create(
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.client = Client()
+        cls.user = User.objects.create(
             username='user'
         )
-        self.client.force_login(self.user)
-        self.author = User.objects.create(
+        cls.client.force_login(cls.user)
+        cls.author = User.objects.create(
             username=USERNAME
         )
-        self.FOLLOW_URL = reverse('posts:profile_follow',
-                                  kwargs={'username': self.author.username})
-        self.UNFOLLOW_URL = reverse('posts:profile_unfollow',
-                                    kwargs={'username': self.author.username})
-        self.client.get(self.FOLLOW_URL)
+        cls.client.get(FOLLOW_USER_URL)
         Post.objects.create(
             text='text',
-            author=self.author,
+            author=cls.author,
         )
         Post.objects.create(
             text='text_2',
-            author=self.user,
+            author=cls.user,
         )
 
     def test_follow_unfollow(self):
         self.assertTrue(
             Follow.objects.filter(user=self.user, author=self.author).exists()
         )
-        self.client.get(self.UNFOLLOW_URL)
+
+    def test_unfollow(self):
+        self.client.force_login(self.user)
+        self.client.get(UNFOLLOW_USER_URL)
         self.assertFalse(
             Follow.objects.filter(user=self.user, author=self.author).exists()
         )
-
-    def test_follows(self):
-        response = self.client.get(PROFILE_URL)
-        self.assertEqual(len(response.context['page_obj']), 1)

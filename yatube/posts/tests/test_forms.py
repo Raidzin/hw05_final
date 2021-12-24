@@ -76,7 +76,7 @@ class FormsTest(TestCase):
                                  str(post.image.file).split('/')[-1]))
 
     def test_comment_create(self):
-        comment_data = {'text': 'текст коммента'}
+        comment_data = {'text': 'текст комента'}
         comments = set(self.post.comments.all())
         response = self.logined_user.post(self.POST_COMMENT_URL,
                                           data=comment_data)

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from core.models import CreatedModel
 
@@ -85,11 +86,16 @@ class Follow(CreatedModel):
         verbose_name='Автор',
     )
 
-    # def clean(self):
-    #     if self.user == self.author:
-    #         raise ValidationError('нельзя подписаться на себя')
+    def clean(self):
+        if self.user == self.author:
+            raise ValidationError('нельзя подписаться на себя')
 
     class Meta:
-        verbose_name = 'Подписка'
+        verbose_name = 'Подписку'
         verbose_name_plural = 'Подписки'
-        unique_together = ('user', 'author')
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'author'),
+                name='%(class)s_user_author_constraint'
+            ),
+        )

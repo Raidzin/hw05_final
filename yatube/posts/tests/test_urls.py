@@ -10,10 +10,13 @@ SLUG = 'test1'
 INDEX_URL = reverse('posts:main')
 POST_CREATE_URL = reverse('posts:post_create')
 LOGIN_URL = reverse('users:login')
-PROFILE_URL = reverse('posts:profile', kwargs={
-    'username': USERNAME})
-GROUP_POSTS_URL = reverse('posts:group_posts', kwargs={
-    'slug': SLUG})
+PROFILE_URL = reverse('posts:profile', kwargs={'username': USERNAME})
+GROUP_POSTS_URL = reverse('posts:group_posts', kwargs={'slug': SLUG})
+FOLLOW_URL = reverse('posts:follow_index')
+FOLLOW_AUTHOR_URL = reverse('posts:profile_follow',
+                            kwargs={'username': USERNAME})
+UNFOLLOW_AUTHOR_URL = reverse('posts:profile_unfollow',
+                              kwargs={'username': USERNAME})
 
 
 class URLTests(TestCase):
@@ -46,16 +49,15 @@ class URLTests(TestCase):
             'post_id': cls.post.id})
         cls.POST_EDIT_URL = reverse('posts:post_edit', kwargs={
             'post_id': cls.post.id})
-        cls.POST_COMMENT_URL = reverse('posts:add_comment', kwargs={
-            'post_id': cls.post.id})
+
+        cls.guest = Client()
+        cls.another = Client()
+        cls.author = Client()
+
+        cls.another.force_login(cls.test_user)
+        cls.author.force_login(cls.user_author)
 
     def setUp(self):
-        self.guest = Client()
-        self.another = Client()
-        self.author = Client()
-
-        self.another.force_login(self.test_user)
-        self.author.force_login(self.user_author)
         cache.clear()
 
     def test_templates(self):
@@ -66,6 +68,7 @@ class URLTests(TestCase):
             self.POST_DETAIL_URL: 'posts/post_detail.html',
             POST_CREATE_URL: 'posts/create_post.html',
             self.POST_EDIT_URL: 'posts/create_post.html',
+            FOLLOW_URL: 'posts/follow.html',
         }
 
         for url, template in posts_templates.items():
@@ -84,6 +87,12 @@ class URLTests(TestCase):
             [POST_CREATE_URL, self.another, 200],
             [self.POST_EDIT_URL, self.another, 302],
             [self.POST_EDIT_URL, self.author, 200],
+            [FOLLOW_URL, self.guest, 302],
+            [FOLLOW_URL, self.another, 200],
+            [FOLLOW_AUTHOR_URL, self.guest, 302],
+            [FOLLOW_AUTHOR_URL, self.another, 302],
+            [UNFOLLOW_AUTHOR_URL, self.guest, 302],
+            [UNFOLLOW_AUTHOR_URL, self.another, 302],
         ]
 
         for url, client, code in cases:
@@ -92,12 +101,18 @@ class URLTests(TestCase):
 
     def test_redirects(self):
         cases = [
-            [POST_CREATE_URL, self.guest,
+            [POST_CREATE_URL,
+             self.guest,
              f'{LOGIN_URL}?next={POST_CREATE_URL}'],
-            [self.POST_EDIT_URL, self.guest,
+            [self.POST_EDIT_URL,
+             self.guest,
              f'{LOGIN_URL}?next={self.POST_EDIT_URL}'],
-            [self.POST_EDIT_URL, self.another, self.POST_DETAIL_URL],
-            [self.POST_COMMENT_URL, self.another, self.POST_DETAIL_URL]
+            [self.POST_EDIT_URL,
+             self.another,
+             self.POST_DETAIL_URL],
+            [FOLLOW_URL,
+             self.guest,
+             f'{LOGIN_URL}?next={FOLLOW_URL}'],
         ]
 
         for url, client, redirect in cases:

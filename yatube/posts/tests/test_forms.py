@@ -1,3 +1,5 @@
+import re
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -9,6 +11,16 @@ USERNAME = 'username'
 POST_CREATE_URL = reverse('posts:post_create')
 PROFILE_URL = reverse('posts:profile', kwargs={
     'username': USERNAME})
+LOGIN_URL = reverse('users:login')
+
+SMALL_GIF = (
+    b'\x47\x49\x46\x38\x39\x61\x02\x00'
+    b'\x01\x00\x80\x00\x00\x00\x00\x00'
+    b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+    b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+    b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+    b'\x0A\x00\x3B'
+)
 
 
 class FormsTest(TestCase):
@@ -37,29 +49,20 @@ class FormsTest(TestCase):
         cls.POST_DETAIL_URL = reverse('posts:post_detail', kwargs={
             'post_id': cls.post.id})
 
-        small_gif = (
-            b'\x47\x49\x46\x38\x39\x61\x02\x00'
-            b'\x01\x00\x80\x00\x00\x00\x00\x00'
-            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-            b'\x0A\x00\x3B'
-        )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
-            content=small_gif,
+            content=SMALL_GIF,
             content_type='image/gif'
         )
-
-    def setUp(self):
-        self.logined_user = Client()
-        self.logined_user.force_login(self.user)
+        cls.anonim = Client()
+        cls.logined_user = Client()
+        cls.logined_user.force_login(cls.user)
 
     def test_post_create(self):
         post_data = {
             'text': 'текст поста нового',
             'group': self.group.id,
-            'image': self.uploaded
+            'image': self.uploaded,
         }
         posts = set(Post.objects.all())
         response = self.logined_user.post(POST_CREATE_URL, data=post_data)
@@ -69,9 +72,9 @@ class FormsTest(TestCase):
         self.assertEqual(post.text, post_data['text'])
         self.assertEqual(post.group.id, post_data['group'])
         self.assertEqual(post.author, self.user)
-        # self.assertEqual(post.image.file, File(post_data['image']))
-        # хотелось, но не получилось
         self.assertRedirects(response, PROFILE_URL)
+        self.assertTrue(re.match(str(post_data['image']).split('.')[0],
+                                 str(post.image.file).split('\\')[-1]))
 
     def test_comment_create(self):
         comment_data = {'text': 'текст коммента'}
@@ -89,7 +92,8 @@ class FormsTest(TestCase):
     def test_post_edit(self):
         post_data = {
             'text': 'текст редактированного нового',
-            'group': self.group_2.id
+            'group': self.group_2.id,
+            'image': self.uploaded,
         }
         response = self.logined_user.post(self.POST_EDIT_URL, data=post_data,
                                           follow=True)
@@ -98,6 +102,8 @@ class FormsTest(TestCase):
         self.assertEqual(post.group.id, post_data['group'])
         self.assertEqual(post.author, self.post.author)
         self.assertRedirects(response, self.POST_DETAIL_URL)
+        self.assertTrue(re.match(str(post_data['image']).split('.')[0],
+                                 str(post.image.file).split('\\')[-1]))
 
     def test_forms_context(self):
         urls = [POST_CREATE_URL, self.POST_EDIT_URL]
@@ -113,3 +119,34 @@ class FormsTest(TestCase):
                         form_field = response.context.get('form').fields.get(
                             value)
                         self.assertIsInstance(form_field, expected)
+
+    def test_anonim_create_post(self):
+        post_data = {
+            'text': 'текст нового',
+            'group': self.group_2.id,
+            'image': self.uploaded,
+        }
+        posts = set(Post.objects.all())
+        response = self.anonim.post(POST_CREATE_URL, data=post_data,
+                                    follow=True)
+        posts = set(Post.objects.all()) - posts
+        self.assertEqual(len(posts), 0)
+
+    def test_anonim_edit_post(self):
+        post_data = {
+            'text': 'текст нового',
+            'group': self.group_2.id,
+            'image': self.uploaded,
+        }
+        self.anonim.post(self.POST_EDIT_URL, data=post_data, follow=True)
+        post = Post.objects.get(id=self.post.id)
+        self.assertEqual(self.post.text, post.text)
+        self.assertEqual(self.post.group, post.group)
+        self.assertEqual(self.post.author, post.author)
+
+    def test_anonim_comment_create(self):
+        comment_data = {'text': 'текст коммента'}
+        comments = set(self.post.comments.all())
+        self.anonim.post(self.POST_COMMENT_URL, data=comment_data)
+        comments = set(self.post.comments.all()) - comments
+        self.assertEqual(len(comments), 0)

@@ -137,7 +137,7 @@ class FormsTest(TestCase):
         }
         posts = set(Post.objects.all())
         self.anonim.post(POST_CREATE_URL, data=post_data,
-                                    follow=True)
+                         follow=True)
         posts = set(Post.objects.all()) - posts
         self.assertEqual(len(posts), 0)
 

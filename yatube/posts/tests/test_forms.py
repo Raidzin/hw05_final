@@ -1,5 +1,3 @@
-import re
-
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -75,8 +73,8 @@ class FormsTest(TestCase):
         self.assertEqual(post.group.id, post_data['group'])
         self.assertEqual(post.author, self.user)
         self.assertRedirects(response, PROFILE_URL)
-        self.assertTrue(re.match(str(post_data['image']).split('.')[0],
-                                 str(post.image.file)))
+        self.assertTrue(
+            str(post_data['image']).split('.')[0] in str(post.image.file))
 
     def test_comment_create(self):
         comment_data = {'text': 'текст комента'}
@@ -110,8 +108,8 @@ class FormsTest(TestCase):
         self.assertEqual(post.group.id, post_data['group'])
         self.assertEqual(post.author, self.post.author)
         self.assertRedirects(response, self.POST_DETAIL_URL)
-        self.assertTrue(re.match(str(post_data['image']).split('.')[0],
-                                 str(post.image.file)))
+        self.assertTrue(
+            str(post_data['image']).split('.')[0] in str(post.image.file))
 
     def test_forms_context(self):
         urls = [POST_CREATE_URL, self.POST_EDIT_URL]

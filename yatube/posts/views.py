@@ -42,9 +42,10 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    follow = (request.user.is_authenticated and
-              not request.user.username == username and
-              Follow.objects.filter(author=author, user=request.user).exists())
+    follow = (request.user.is_authenticated
+              and not request.user.username == username
+              and Follow.objects.filter(author=author,
+                                        user=request.user).exists())
     return render(request, 'posts/profile.html', {
         'author': author,
         'page_obj': get_page_obj(request, author.posts.all()),

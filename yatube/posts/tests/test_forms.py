@@ -87,7 +87,6 @@ class FormsTest(TestCase):
         self.assertEqual(comment.post, self.post)
         self.assertEqual(comment.text, comment_data['text'])
         self.assertEqual(comment.author, self.user)
-        self.assertEqual(comment.post, self.post)
         self.assertRedirects(response, self.POST_DETAIL_URL)
 
     def test_post_edit(self):
@@ -126,7 +125,7 @@ class FormsTest(TestCase):
                             value)
                         self.assertIsInstance(form_field, expected)
 
-    def test_anonim_create_post(self):
+    def test_anonim_trying_create_post(self):
         uploaded = SimpleUploadedFile(
             name='small.gif',
             content=SMALL_GIF,
@@ -145,7 +144,7 @@ class FormsTest(TestCase):
         self.assertRedirects(response,
                              f'{LOGIN_URL}?next={POST_CREATE_URL}')
 
-    def test_anonim_edit_post(self):
+    def test_anonim_trying_edit_post(self):
         users = {self.anonim: f'{LOGIN_URL}?next={self.POST_EDIT_URL}',
                  self.another: self.POST_DETAIL_URL}
         uploaded = SimpleUploadedFile(
@@ -158,10 +157,10 @@ class FormsTest(TestCase):
             'group': self.group_2.id,
             'image': uploaded,
         }
-        for user, redirect in users.items():
-            with self.subTest(user=user):
-                response = user.post(self.POST_EDIT_URL, data=post_data,
-                                     follow=True)
+        for client, redirect in users.items():
+            with self.subTest(user=client):
+                response = client.post(self.POST_EDIT_URL, data=post_data,
+                                       follow=True)
                 post = Post.objects.get(id=self.post.id)
                 self.assertEqual(self.post.text, post.text)
                 self.assertEqual(self.post.group, post.group)

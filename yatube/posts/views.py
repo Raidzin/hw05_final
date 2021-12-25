@@ -16,10 +16,6 @@ def get_page_obj(request, posts):
     return paginator.get_page(page_number)
 
 
-def red_to_prof(username):
-    return
-
-
 @cache_page(CACHE_TIME)
 def index(request):
     return render(request, 'posts/index.html', {

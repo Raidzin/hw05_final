@@ -126,7 +126,7 @@ class PostsViewTest(TestCase):
                          self.group.description)
 
     def test_new_post_append_in_another_group(self):
-        self.logined_client.get(UNFOLLOW_USER_URL)
+        Follow.objects.all().delete()
         urls = [GROUP_POSTS_2_URL, FOLLOW_URL]
         for url in urls:
             with self.subTest(url=url):
@@ -181,14 +181,6 @@ class FollowsTest(TestCase):
             username=USERNAME
         )
         cls.client.get(FOLLOW_USER_URL)
-        Post.objects.create(
-            text='text',
-            author=cls.author,
-        )
-        Post.objects.create(
-            text='text_2',
-            author=cls.user,
-        )
 
     def test_follow_unfollow(self):
         self.assertTrue(

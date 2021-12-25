@@ -24,7 +24,7 @@ class RouteTests(TestCase):
             [f'/profile/{USERNAME}/unfollow/', 'profile_unfollow', [USERNAME]],
         ]
 
-        for url, name, kwargs in cases:
+        for url, name, args in cases:
             with self.subTest(url=url):
-                reverse_url = reverse(f'{app_name}:{name}', args=kwargs)
+                reverse_url = reverse(f'{app_name}:{name}', args=args)
                 self.assertEqual(url, reverse_url)

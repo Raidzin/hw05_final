@@ -9,7 +9,7 @@
     </div>
     <div class="container">
       {% include 'posts/includes/create_comment.html'%}
-      {% for comment in comments %}
+      {% for comment in post.comments.all %}
         {% include 'posts/includes/comment.html'%}
       {% endfor %}
     </div>

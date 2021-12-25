@@ -93,6 +93,8 @@ class URLTests(TestCase):
             [FOLLOW_AUTHOR_URL, self.another, 302],
             [UNFOLLOW_AUTHOR_URL, self.guest, 302],
             [UNFOLLOW_AUTHOR_URL, self.another, 302],
+            [FOLLOW_AUTHOR_URL, self.author, 302],
+            [UNFOLLOW_AUTHOR_URL, self.author, 302],
         ]
 
         for url, client, code in cases:
@@ -113,6 +115,24 @@ class URLTests(TestCase):
             [FOLLOW_URL,
              self.guest,
              f'{LOGIN_URL}?next={FOLLOW_URL}'],
+            [FOLLOW_AUTHOR_URL,
+             self.guest,
+             f'{LOGIN_URL}?next={FOLLOW_AUTHOR_URL}'],
+            [FOLLOW_AUTHOR_URL,
+             self.another,
+             PROFILE_URL],
+            [UNFOLLOW_AUTHOR_URL,
+             self.guest,
+             f'{LOGIN_URL}?next={UNFOLLOW_AUTHOR_URL}'],
+            [UNFOLLOW_AUTHOR_URL,
+             self.another,
+             PROFILE_URL],
+            [FOLLOW_AUTHOR_URL,
+             self.author,
+             PROFILE_URL],
+            [UNFOLLOW_AUTHOR_URL,
+             self.author,
+             PROFILE_URL],
         ]
 
         for url, client, redirect in cases:
